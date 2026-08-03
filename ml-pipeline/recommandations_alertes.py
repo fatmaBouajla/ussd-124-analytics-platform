@@ -2,15 +2,15 @@ import pandas as pd
 
 
 
+from config_seuils import SEUIL_ALERTE_CA_PCT
+
+
+
 FICHIER_INCIDENT_RESULTAT = "/home/fatma/elk-ussd-orange/ml-pipeline/data/resultat_incident.csv"
 
 FICHIER_PARQUET = "/home/fatma/elk-ussd-orange/ml-pipeline/data/cdr_clean.parquet"
 
 FICHIER_SORTIE = "/home/fatma/elk-ussd-orange/ml-pipeline/data/recommandations_alertes.csv"
-
-
-
-SEUIL_ALERTE_CA = 1000
 
 
 
@@ -35,8 +35,7 @@ ACTIONS_PAR_CAUSE = {
         "incident technique.",
 
     "Option/bonus non provisionnee sur la base OTNWS":
-
-        "Verifier la  de l'offre dans la base OTNWS.",
+        "Verifier la configuration de l'offre dans la base OTNWS.",
     "Nbre max d'utilisation de l'option est atteint":
         "Limite metier normale - verifier si le seuil est toujours pertinent.",
     "API OpenCode KO fonctionnel":
@@ -52,11 +51,25 @@ def action_pour_cause(cause):
     return "Cause non repertoriee - investigation manuelle necessaire."
 
 
+def calculer_ecart_pct(ligne):
+    if ligne["ca_reel_prevu"] > 1:
+        return round((ligne["ca_reel_ecart"] / ligne["ca_reel_prevu"]) * 100, 1)
+    return 0.0
+
+
 def main():
+    if SEUIL_ALERTE_CA_PCT is None:
+        raise ValueError(
+            "SEUIL_ALERTE_CA_PCT n'est pas encore defini dans config_seuils.py. "
+            "Lancer analyser_distribution_ecarts.py, choisir un seuil avec Fatma, "
+            "puis renseigner la valeur avant de generer les recommandations."
+        )
+
     incident = pd.read_csv(FICHIER_INCIDENT_RESULTAT, parse_dates=["datetime"])
     df_cdr = pd.read_parquet(FICHIER_PARQUET)
 
-    en_alerte = incident[incident["ca_reel_ecart"].abs() >= SEUIL_ALERTE_CA].copy()
+    incident["ca_reel_ecart_pct"] = incident.apply(calculer_ecart_pct, axis=1)
+    en_alerte = incident[incident["ca_reel_ecart_pct"].abs() >= SEUIL_ALERTE_CA_PCT].copy()
 
     resultats = []
     for _, ligne in en_alerte.iterrows():
@@ -80,7 +93,8 @@ def main():
 
         resultats.append({
             "datetime": debut,
-            "ca_ecart": ligne["ca_reel_ecart"],
+            "ca_ecart_pct": ligne["ca_reel_ecart_pct"],
+            "ca_ecart_dt": ligne["ca_reel_ecart"],
             "nb_echecs_creneau": len(echecs_creneau),
             "cause_dominante": cause_dominante,
             "part_cause_dominante_pct": round(part * 100, 1),
@@ -92,7 +106,7 @@ def main():
 
     print("=== Recommandations par creneau en alerte ===")
     for _, l in resultats_df.iterrows():
-        print(f"\n{l['datetime']} (ecart CA: {l['ca_ecart']:.0f} DT)")
+        print(f"\n{l['datetime']} (ecart CA: {l['ca_ecart_dt']:.0f} DT, {l['ca_ecart_pct']:+.1f}%)")
         print(f"  Cause dominante: {l['cause_dominante']} ({l['part_cause_dominante_pct']:.0f}% des echecs)")
         print(f"  Action recommandee: {l['action_recommandee']}")
 

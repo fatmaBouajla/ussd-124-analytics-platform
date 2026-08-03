@@ -38,62 +38,45 @@ def main():
 
     )
 
-    df = df.rename(columns={"fiable_tendance": "fiable_tendance"})
 
 
+    # CORRECTION : l'ancienne version filtrait uniquement sur df["fiable"]
 
-    df_fiable = df[df["fiable"]].copy()
+    # (classement) sans verifier df["fiable_tendance"], alors que
 
+    # rang_tendance vient precisement de tendance_offres.py. Une offre
 
+    # avec peu de jours de donnees pouvait donc peser dans l'indice avec
+
+    # une tendance calculee sur une base trop fragile. Desormais les deux
+
+    # conditions sont requises explicitement (meme si, depuis l'unification
+    # des seuils dans config_seuils.py, elles devraient converger).
+    df_fiable = df[df["fiable"] & df["fiable_tendance"]].copy()
 
     df_fiable["rang_ca"] = df_fiable["ca_total"].rank(pct=True)
-
     df_fiable["rang_succes"] = df_fiable["taux_succes_global"].rank(pct=True)
-
     df_fiable["rang_volume"] = df_fiable["nb_souscriptions_total"].rank(pct=True)
-
     df_fiable["rang_tendance"] = df_fiable["variation_ca_pct"].rank(pct=True)
 
-
-
     df_fiable["indice_performance"] = (
-
         df_fiable["rang_ca"] * POIDS_CA
-
         + df_fiable["rang_succes"] * POIDS_SUCCES
-
         + df_fiable["rang_volume"] * POIDS_VOLUME
-
         + df_fiable["rang_tendance"] * POIDS_TENDANCE
-
     ) * 100
 
-
-
     df_fiable = df_fiable.sort_values("indice_performance", ascending=False)
-
     df_fiable.to_csv(FICHIER_SORTIE, index=False)
 
-
-
     print("=== Classement complet - Indice de performance de l'offre ===")
-
     print(df_fiable[["offer_code", "offer_name", "indice_performance",
-
-                      "ca_total", "taux_succes_global", "nb_souscriptions_total",
-
+                     "ca_total", "taux_succes_global", "nb_souscriptions_total",
                       "variation_ca_pct"]].round(1).to_string(index=False))
 
-
-
     print(f"\nFichier ecrit : {FICHIER_SORTIE}")
-
-    print(f"\nNombre d'offres non incluses (non fiables pour tendance) : {len(df) - len(df_fiable)}")
-
-
-
+    print(f"\nNombre d'offres non incluses (non fiables) : {len(df) - len(df_fiable)}")
 
 
 if __name__ == "__main__":
-
     main()
