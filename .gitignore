@@ -1,7 +1,15 @@
 data/
-*.cdr
-*.parquet
-*.csv
+
+*. cdr
+
+*. parquet
+
+*. CSV
+
 __pycache__/
+
 *.pyc
-.env
+
+. env
+
+config_secrets.py
