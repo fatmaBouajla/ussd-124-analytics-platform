@@ -48,23 +48,16 @@ CONTAMINATION_ISOLATION_FOREST = 0.15
 
 # --- Alerte CA (generer_rapport.py, recommandations_alertes.py) ---
 
-# EN ATTENTE - calcul dynamique prevu lors de la mise en place de
+# VALEUR PROVISOIRE : correspond au p90 observe sur la distribution des
 
-# l'orchestration (recalcule a chaque cycle, avec garde-fous min/max).
+# ecarts en periode normale (analyser_distribution_ecarts.py, aout 2026).
 
-SEUIL_ALERTE_CA_PCT = None
+# A REMPLACER par un calcul dynamique (recalcule a chaque reentrainement,
 
+# avec garde-fous min/max) une fois l'orchestration en place.
 
+SEUIL_ALERTE_CA_PCT = 35.0
 
 # --- Indicateurs clients (indicateurs_clients.py) ---
-
-# Nb minimum d'echecs d'un meme client DANS LE MEME CRENEAU DE 30 MIN
-
-# pour le compter comme "reessaie plusieurs fois" (signal d'acharnement
-# immediat, typique d'un incident technique en cours).
 SEUIL_TENTATIVES_REESSAI = 2
-
-# Nb minimum d'echecs d'un meme client SUR TOUTE LA PERIODE, avec 0 succes,
-# pour le classer "client bloque" (evite de classer comme bloque un client
-# qui a juste tente une fois sans jamais retenter).
 SEUIL_TENTATIVES_BLOQUE = 3

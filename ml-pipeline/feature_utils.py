@@ -8,9 +8,7 @@ utilisent les modeles de prevision (RF/XGBoost/Holt-Winters, SHAP, confiance).
 
 But : un seul endroit a modifier si la definition des features change,
 
-au lieu de la dupliquer dans 6 scripts differents (source du bug ou
-
-shap_analysis.py avait garde position_periode par erreur, aout 2026).
+au lieu de la dupliquer dans 6 scripts differents.
 
 """
 
@@ -22,17 +20,23 @@ TEMPOREL = ["heure_du_jour", "jour_semaine", "est_weekend"]
 
 
 
-# Variante de features (complete/reduite) retenue empiriquement par cible
+# Variante de features (complete/reduite) retenue empiriquement par cible,
 
-# apres comparaison MAE/RMSE dans train_forecast_models.py.
+# d'apres les resultats reels de train_forecast_models.py (aout 2026) :
+
+#   ca_reel         -> reduit  (MAE 447.25 vs 514.56 complet)
+
+#   nb_transactions -> reduit  (MAE 141.30 vs 149.01 complet)
+
+#   taux_echec      -> complet (MAE 0.0148 vs 0.0154 reduit)
 
 VARIANTE_GAGNANTE = {
 
     "ca_reel": "reduit",
 
-    "nb_transactions": "complet",
+    "nb_transactions": "reduit",
 
-    "taux_echec": "reduit",
+    "taux_echec": "complet",
 
 }
 
@@ -45,11 +49,7 @@ def features_propres(serie):
     """Features basees uniquement sur l'historique de la serie elle-meme."""
 
     return [f"{serie}_moins_1h", f"{serie}_moins_2h", f"{serie}_moins_24h",
-
             f"{serie}_moyenne_3h", f"{serie}_moyenne_6h"]
-
-
-
 
 
 def features_croisees_completes(serie):
