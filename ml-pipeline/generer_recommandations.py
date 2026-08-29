@@ -2,50 +2,25 @@ import pandas as pd
 
 from sklearn.ensemble import IsolationForest
 
-
-
 from config_seuils import (
-
     SEUIL_TAUX_CRITIQUE, SEUIL_TAUX_VIGILANCE, SEUIL_HAUSSE, SEUIL_BAISSE,
-
     SEUIL_CAUSE_DOMINANTE, CONTAMINATION_ISOLATION_FOREST,
-
 )
-
-
+from classification_causes_utils import statut_cause, charger_classification
 
 FICHIER_INDICE = "/home/fatma/elk-ussd-orange/ml-pipeline/data/indice_performance_offres.csv"
-
 FICHIER_PARQUET = "/home/fatma/elk-ussd-orange/ml-pipeline/data/cdr_clean.parquet"
-
 FICHIER_SORTIE = "/home/fatma/elk-ussd-orange/ml-pipeline/data/recommandations_offres.csv"
 
 
-
-CAUSE_CHRONIQUE = "Exception on update main balance (Commande IN updatebalanceAnddate KO)"
-
-
-
-
-
 def obtenir_cause_dominante(df_cdr, offer_code):
-
     echecs = df_cdr[(df_cdr["offer"] == offer_code) & (df_cdr["event_type"] == "transaction_failed")]
-
     if len(echecs) == 0:
-
         return None, 0.0
-
     compte = echecs["error_description"].value_counts()
-
     cause_principale = compte.index[0]
-
     part = compte.iloc[0] / len(echecs)
-
     return cause_principale, part
-
-
-
 
 
 def detecter_anomalies_statistiques(df):
@@ -62,31 +37,48 @@ def detecter_anomalies_statistiques(df):
     return df
 
 
-def generer_constat(ligne, cause, part_cause):
+def generer_constat(ligne, cause, part_cause, classification):
     """
     Decrit la situation de l'offre a partir des donnees (taux de succes,
     tendance, cause dominante) SANS prescrire d'action corrective - la
     plateforme detecte et explique, elle ne propose pas de procedure de
     resolution (aucun referentiel d'actions valide n'existe a ce jour).
+
+    La distinction technique/metier/a_verifier vient de
+    classification_causes.yml (reference versionnee, Phase 1 du plan),
+    pas d'une comparaison a une seule cause codee en dur.
     """
     taux = ligne["taux_succes_global"]
     variation = ligne["variation_ca_pct"]
     ca = ligne["ca_total"]
 
     if taux < SEUIL_TAUX_CRITIQUE:
-        if cause == CAUSE_CHRONIQUE and part_cause >= SEUIL_CAUSE_DOMINANTE:
+        statut = statut_cause(cause, classification) if cause else "a_verifier"
+
+        if statut == "technique_ponctuelle" and part_cause >= SEUIL_CAUSE_DOMINANTE:
             texte = (f"Taux de succes critique ({taux*100:.0f}%), fortement affecte "
-                     f"par le bug technique chronique de la plateforme "
-                     f"({part_cause*100:.0f}% des echecs) - pas un probleme isole "
-                     f"a cette offre.")
-        elif part_cause >= SEUIL_CAUSE_DOMINANTE:
-            texte = (f"Taux de succes critique ({taux*100:.0f}%), avec une cause "
-                     f"dominante specifique a cette offre : '{cause}' "
-                     f"({part_cause*100:.0f}% des echecs).")
+                     f"par un incident technique confirme de la plateforme "
+                     f"('{cause}', {part_cause*100:.0f}% des echecs) - pas un probleme "
+                     f"isole a cette offre.")
+            priorite = "technique_critique"
+
+        elif statut == "metier_stable" and part_cause >= SEUIL_CAUSE_DOMINANTE:
+            texte = (f"Taux de succes critique ({taux*100:.0f}%), mais majoritairement "
+                     f"explique par un comportement client normal "
+                     f"('{cause}', {part_cause*100:.0f}% des echecs) - pas un "
+                     f"dysfonctionnement de la plateforme.")
+            priorite = "taux_critique_non_technique"
+
+        elif statut == "a_verifier" and cause is not None and part_cause >= SEUIL_CAUSE_DOMINANTE:
+            texte = (f"Taux de succes critique ({taux*100:.0f}%), cause dominante non "
+                     f"encore repertoriee ('{cause}', {part_cause*100:.0f}% des echecs) "
+                     f"- a verifier manuellement.")
+            priorite = "taux_critique_non_technique"
+
         else:
             texte = (f"Taux de succes critique ({taux*100:.0f}%) sans cause dominante "
                      f"claire (causes d'echec dispersees).")
-        priorite = "technique_critique"
+            priorite = "technique_critique"
 
     elif taux < SEUIL_TAUX_VIGILANCE:
         texte = (f"Fiabilite en zone de vigilance ({taux*100:.0f}%), en dessous du "
@@ -113,13 +105,14 @@ def generer_constat(ligne, cause, part_cause):
 def main():
     df = pd.read_csv(FICHIER_INDICE)
     df_cdr = pd.read_parquet(FICHIER_PARQUET)
+    classification = charger_classification()
 
     df = detecter_anomalies_statistiques(df)
 
     resultats = []
     for _, ligne in df.iterrows():
         cause, part = obtenir_cause_dominante(df_cdr, ligne["offer_code"])
-        texte, priorite = generer_constat(ligne, cause, part)
+        texte, priorite = generer_constat(ligne, cause, part, classification)
 
         if ligne["anomalie_statistique"] == 1 and priorite in ("vigilance", "neutre"):
             texte += (" [Signal complementaire] Profil statistiquement atypique "
@@ -140,7 +133,8 @@ def main():
 
     resultats_df = pd.DataFrame(resultats)
     ordre = {"technique_critique": 0, "anomalie_detectee": 1,
-             "vigilance": 2, "opportunite": 3, "marketing": 4, "neutre": 5}
+             "taux_critique_non_technique": 2, "vigilance": 3,
+             "opportunite": 4, "marketing": 5, "neutre": 6}
     resultats_df = resultats_df.sort_values(by="priorite", key=lambda x: x.map(ordre))
     resultats_df.to_csv(FICHIER_SORTIE, index=False)
 

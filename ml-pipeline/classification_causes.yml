@@ -1,0 +1,35 @@
+"Exception on update main balance (Commande IN updatebalanceAnddate KO)":
+  statut: metier_stable
+  interpretation: "Solde insuffisant du client - refus normal de la plateforme de facturation, pas un dysfonctionnement technique."
+
+"Other BuyOption ErrCode :1":
+  statut: technique_ponctuelle
+  interpretation: "Incident technique confirme - pic concentre le 08/07/2026 vers 13h (68.9% du volume total de cette cause sur 1 heure)."
+
+"API OpenCode KO fonctionnel":
+  statut: technique_ponctuelle
+  interpretation: "Incident technique - pic concentre le 29/07/2026 vers 01h (64.2% du volume total de cette cause sur 1 heure)."
+
+"Utilisateur non autorise pour acheter l'option":
+  statut: metier_stable
+  interpretation: "Regle d'eligibilite/provisioning normale, comportement stable dans le temps."
+
+"Option/bonus non provisionnee sur la base OTNWS":
+  statut: metier_stable
+  interpretation: "Volume faible et reparti dans le temps, pas de concentration en pic."
+
+"Nbre max d'utilisation de l'option est atteint":
+  statut: metier_stable
+  interpretation: "Limite metier normale, comportement stable."
+
+"Service non implemente":
+  statut: metier_stable
+  interpretation: "Volume tres faible et reparti dans le temps."
+
+"Contrat inactif":
+  statut: metier_stable
+  interpretation: "Regle metier normale (client sans contrat actif), volume faible."
+
+"Commande IN Refill KO":
+  statut: a_verifier
+  interpretation: "Volume insuffisant (1 occurrence) pour classification statistique fiable."

@@ -5,14 +5,13 @@ from sklearn.ensemble import RandomForestRegressor
 from feature_utils import colonnes_finales
 
 FICHIER_TRAIN = "/home/fatma/elk-ussd-orange/ml-pipeline/data/forecast_train.csv"
-FICHIER_INCIDENT = "/home/fatma/elk-ussd-orange/ml-pipeline/data/forecast_incident.csv"
-FICHIER_SORTIE = "/home/fatma/elk-ussd-orange/ml-pipeline/data/shap_incident_detail.csv"
+FICHIER_TEST_AVEUGLE = "/home/fatma/elk-ussd-orange/ml-pipeline/data/forecast_test.csv"
+FICHIER_SORTIE = "/home/fatma/elk-ussd-orange/ml-pipeline/data/shap_test_aveugle_detail.csv"
 
 
 def main():
     normal = pd.read_csv(FICHIER_TRAIN)
-
-    incident = pd.read_csv(FICHIER_INCIDENT, parse_dates=["datetime"])
+    test_aveugle = pd.read_csv(FICHIER_TEST_AVEUGLE, parse_dates=["datetime"])
 
     serie = "ca_reel"
     cible = f"{serie}_cible"
@@ -22,10 +21,10 @@ def main():
     modele.fit(normal[colonnes], normal[cible])
 
     explainer = shap.TreeExplainer(modele)
-    valeurs_shap = explainer.shap_values(incident[colonnes])
+    valeurs_shap = explainer.shap_values(test_aveugle[colonnes])
 
     resultats = []
-    for i, (_, ligne) in enumerate(incident.iterrows()):
+    for i, (_, ligne) in enumerate(test_aveugle.iterrows()):
         contributions = pd.Series(valeurs_shap[i], index=colonnes).sort_values()
         facteur_negatif = contributions.index[0]
         impact_negatif = contributions.iloc[0]
