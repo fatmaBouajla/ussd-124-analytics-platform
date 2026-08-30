@@ -24,6 +24,14 @@ def recreer_index(nom_index, mapping):
     print(f"Index cree : {nom_index}")
 
 
+def creer_index_si_absent(nom_index, mapping):
+    if not es.indices.exists(index=nom_index):
+        es.indices.create(index=nom_index, mappings=mapping)
+        print(f"Index cree : {nom_index}")
+    else:
+        print(f"Index existant conserve : {nom_index}")
+
+
 def indexer(nom_index, documents, id_field=None):
     actions = []
     for doc in documents:
@@ -33,6 +41,24 @@ def indexer(nom_index, documents, id_field=None):
         actions.append(action)
     succes, erreurs = helpers.bulk(es, actions, raise_on_error=False)
     print(f"{nom_index} : {succes} documents indexes, {len(erreurs)} erreurs")
+    if erreurs:
+        print("Premieres erreurs :", erreurs[:3])
+
+
+def indexer_upsert_partiel(nom_index, documents, id_field, champs_proteges):
+    actions = []
+    for doc in documents:
+        doc_id = f"{doc[id_field]}_{doc.get('type_periode', '')}_{doc.get('type_alerte', '')}"
+        doc_sans_champs_proteges = {k: v for k, v in doc.items() if k not in champs_proteges}
+        actions.append({
+            "_op_type": "update",
+            "_index": nom_index,
+            "_id": doc_id,
+            "doc": doc_sans_champs_proteges,
+            "upsert": doc,
+        })
+    succes, erreurs = helpers.bulk(es, actions, raise_on_error=False)
+    print(f"{nom_index} : {succes} documents mis a jour (upsert), {len(erreurs)} erreurs")
     if erreurs:
         print("Premieres erreurs :", erreurs[:3])
 
@@ -86,6 +112,8 @@ def construire_index_alertes():
 
     df = alertes.merge(confiance[["datetime", "ca_reel_hors_zone"]], on="datetime", how="left")
     df = df.rename(columns={"ca_reel_hors_zone": "hors_zone_confiance"})
+    df["statut_alerte"] = "active"
+    df["datetime_str"] = df["datetime"].dt.strftime("%Y-%m-%dT%H:%M:%S")
 
     mapping = {
         "properties": {
@@ -96,11 +124,14 @@ def construire_index_alertes():
             "cause_dominante": {"type": "keyword"}, "part_cause_dominante_pct": {"type": "float"},
             "hors_zone_confiance": {"type": "integer"},
             "taux_echec_reel": {"type": "float"}, "taux_echec_prevu": {"type": "float"},
-            "taux_echec_ecart": {"type": "float"},
+            "taux_echec_ecart": {"type": "float"}, "statut_alerte": {"type": "keyword"},
         }
     }
-    recreer_index("ussd-alertes", mapping)
-    indexer("ussd-alertes", nettoyer_documents(df))
+    creer_index_si_absent("ussd-alertes", mapping)
+    documents = nettoyer_documents(df.drop(columns=["datetime_str"]))
+    for doc, doc_id_val in zip(documents, df["datetime_str"]):
+        doc["_id_calcule"] = doc_id_val
+    indexer_upsert_partiel("ussd-alertes", documents, id_field="_id_calcule", champs_proteges={"statut_alerte", "_id_calcule"})
 
 
 def construire_index_clients():
