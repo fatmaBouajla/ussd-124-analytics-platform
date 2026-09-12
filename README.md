@@ -7,8 +7,9 @@ Le système repère les incidents techniques tout seul, les distingue des compor
 ---
 
 ## **Architecture**
- Apache Airflow (orchestration)  déclenche et enchaîne toutes les étapes ci-dessous
 ```text
+ Apache Airflow (orchestration)  déclenche et enchaîne toutes les étapes ci-dessous
+
 CDR bruts (.cdr)
     ↓
 Nettoyage + anonymisation (HMAC-SHA256, irréversible)
