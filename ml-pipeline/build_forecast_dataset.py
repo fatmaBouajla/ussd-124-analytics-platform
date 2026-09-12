@@ -5,18 +5,11 @@ FICHIER_TRAIN = "/home/fatma/elk-ussd-orange/ml-pipeline/data/forecast_train.csv
 FICHIER_TEST = "/home/fatma/elk-ussd-orange/ml-pipeline/data/forecast_test.csv"
 FICHIER_INCIDENT = "/home/fatma/elk-ussd-orange/ml-pipeline/data/forecast_incident.csv"
 
-# Date de gel : non negociable une fois posee (Phase 2 du plan).
-# Calibration = tout ce qui est <= cette date (hors incidents historiques
-# listes ci-dessous). Test aveugle = tout ce qui est apres - aucune date
-# d'incident specifique (ex. 29/07) n'est jamais ecrite dans ce fichier :
-# elle tombe naturellement dans le test aveugle par simple comparaison
-# de date.
+
 COUPURE_CALIBRATION = "2026-07-25 23:59:59"
 
 # Incidents historiques connus a exclure de la calibration et a isoler
-# pour validation retrospective (Phase 2-3). Une entree ici = un incident
-# deja identifie et utilise pendant le developpement, jamais une donnee
-# du test aveugle.
+
 LISTE_INCIDENTS_HISTORIQUES = [
     {"nom": "incident_08_07", "debut": "2026-07-08 12:00:00", "fin": "2026-07-09 11:30:00"},
 ]
@@ -36,12 +29,7 @@ def ajouter_features(df):
 
 
 def masque_incidents_historiques(df):
-    """
-    Retourne un masque booleen : True pour les lignes appartenant a un
-    incident historique connu (LISTE_INCIDENTS_HISTORIQUES), False sinon.
-    Generalise a plusieurs incidents plutot qu'une seule paire de dates
-    en dur (Phase 2 du plan).
-    """
+   
     masque = pd.Series(False, index=df.index)
     for incident in LISTE_INCIDENTS_HISTORIQUES:
         masque |= (df["datetime"] >= incident["debut"]) & (df["datetime"] <= incident["fin"])
