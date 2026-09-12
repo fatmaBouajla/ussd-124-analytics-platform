@@ -57,13 +57,7 @@ def main():
 
     resultat = pd.DataFrame(lignes).sort_values("datetime").reset_index(drop=True)
 
-    # ATTENTION : position_periode est calculee ici pour servir de repere
-    # chronologique lisible (tri, debug, verification de trous dans les
-    # creneaux) mais elle N'EST JAMAIS UTILISEE COMME FEATURE dans les
-    # modeles (voir feature_utils.py -> TEMPOREL, qui ne la contient pas).
-    # Raison : elle serait toujours "hors zone" par construction pour toute
-    # heure future, ce qui biaiserait l'entrainement. Ne pas l'ajouter a
-    # TEMPOREL sans revalider cette decision explicitement.
+   
     resultat["position_periode"] = range(len(resultat))
 
     resultat.to_csv(FICHIER_SORTIE, index=False)
