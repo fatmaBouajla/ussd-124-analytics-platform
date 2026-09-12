@@ -40,18 +40,7 @@ def main():
 
 
 
-    # CORRECTION : l'ancienne version filtrait uniquement sur df["fiable"]
-
-    # (classement) sans verifier df["fiable_tendance"], alors que
-
-    # rang_tendance vient precisement de tendance_offres.py. Une offre
-
-    # avec peu de jours de donnees pouvait donc peser dans l'indice avec
-
-    # une tendance calculee sur une base trop fragile. Desormais les deux
-
-    # conditions sont requises explicitement (meme si, depuis l'unification
-    # des seuils dans config_seuils.py, elles devraient converger).
+  
     df_fiable = df[df["fiable"] & df["fiable_tendance"]].copy()
 
     df_fiable["rang_ca"] = df_fiable["ca_total"].rank(pct=True)
