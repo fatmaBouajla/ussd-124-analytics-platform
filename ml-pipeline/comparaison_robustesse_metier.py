@@ -62,11 +62,7 @@ def evaluer_holt_winters(serie_train, serie_test):
 
 
 def metriques_detection(actuel, precedent, predit):
-    """
-    Compare : le CA a-t-il vraiment chute de >=20% vs le creneau precedent
-    (baisse_reelle), et le modele avait-il predit une chute similaire
-    (baisse_predite) ? Precision/recall/F1 sur cet evenement binaire.
-    """
+    
     variation_reelle = (actuel - precedent) / precedent
     variation_predite = (predit - precedent) / precedent
 
@@ -108,7 +104,7 @@ def main():
         rmse_rf = mean_squared_error(test_split[cible], pred_rf) ** 0.5
         r2_rf = r2_score(test_split[cible], pred_rf)
 
-        # --- Holt-Winters (sur la serie brute correspondante) ---
+        # --- Holt-Winters ---
         date_train_min, date_train_max = train_split["datetime"].min(), train_split["datetime"].max()
         date_test_min, date_test_max = test_split["datetime"].min(), test_split["datetime"].max()
 
@@ -124,7 +120,7 @@ def main():
         rmse_hw = mean_squared_error(serie_test_brute, pred_hw) ** 0.5
         r2_hw = r2_score(serie_test_brute, pred_hw)
 
-        # --- Detection de baisse significative (utilite metier) ---
+        # --- Detection de baisse significative ---
         actuel = test_split[cible].values
         precedent = test_split[f"{SERIE}_moins_1h"].values  # dernier point connu avant la cible
 
