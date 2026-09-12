@@ -38,16 +38,7 @@ def detecter_anomalies_statistiques(df):
 
 
 def generer_constat(ligne, cause, part_cause, classification):
-    """
-    Decrit la situation de l'offre a partir des donnees (taux de succes,
-    tendance, cause dominante) SANS prescrire d'action corrective - la
-    plateforme detecte et explique, elle ne propose pas de procedure de
-    resolution (aucun referentiel d'actions valide n'existe a ce jour).
-
-    La distinction technique/metier/a_verifier vient de
-    classification_causes.yml (reference versionnee, Phase 1 du plan),
-    pas d'une comparaison a une seule cause codee en dur.
-    """
+    
     taux = ligne["taux_succes_global"]
     variation = ligne["variation_ca_pct"]
     ca = ligne["ca_total"]
