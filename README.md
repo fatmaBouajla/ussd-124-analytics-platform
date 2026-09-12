@@ -1,6 +1,6 @@
 # **Plateforme d’analyse des performances des offres USSD 124**
 
-Projet de stage ingénieur  : plateforme d’analyse des performances des offres USSD et d’aide à la décision, à partir des **CDR (Call Detail Records)** du service USSD 124.
+Projet de stage ingénieur **MLOps** : plateforme d’analyse des performances des offres USSD et d’aide à la décision, à partir des **CDR (Call Detail Records)** du service USSD 124.
 
 Le système repère les incidents techniques tout seul, les distingue des comportements clients normaux, prévoit le CA à court terme, explique ses prédictions, et pousse le résultat dans des dashboards Kibana.
 
@@ -8,7 +8,7 @@ Le système repère les incidents techniques tout seul, les distingue des compor
 
 ## **Architecture**
 
-
+```text
 CDR bruts (.cdr)
     ↓
 Nettoyage + anonymisation (HMAC-SHA256, irréversible)
@@ -26,12 +26,12 @@ Nettoyage + anonymisation (HMAC-SHA256, irréversible)
     └── Alertes + rapport automatique
             ↓
     Elasticsearch → Dashboards Kibana
+```
 
 ---
 
 ## **Validation — protocole de test aveugle**
 
-Un modèle qui prédit bien sur des données qu’il a déjà vues ne prouve rien. Donc, on a découpé les données en trois blocs étanches :
 
 | Bloc                         | Rôle                                                                             |
 | ---------------------------- | -------------------------------------------------------------------------------- |
