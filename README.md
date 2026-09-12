@@ -7,7 +7,9 @@ Le système repère les incidents techniques tout seul, les distingue des compor
 ---
 
 ## **Architecture**
-
+ Apache Airflow (orchestration)        │
+        │   déclenche et enchaîne toutes les étapes     │
+        │        ci-dessous
 ```text
 CDR bruts (.cdr)
     ↓
