@@ -18,19 +18,7 @@ FICHIER_SORTIE_BLOQUES = "/home/fatma/elk-ussd-orange/ml-pipeline/data/clients_b
 
 def calculer_indicateurs_30min(df):
 
-    """
-
-    Par creneau de 30 min (meme grain que ml_dataset_30min.csv, pour
-
-    pouvoir croiser directement avec les creneaux en alerte CA) :
-
-      - nb_clients_impactes : clients distincts avec au moins 1 echec
-
-      - nb_clients_reessai : parmi eux, ceux avec >= SEUIL_TENTATIVES_REESSAI
-
-        echecs DANS CE MEME CRENEAU (signal d'acharnement immediat)
-
-    """
+   
 
     df_echecs = df[df["event_type"] == "transaction_failed"].copy()
 
@@ -58,11 +46,7 @@ def calculer_indicateurs_30min(df):
 
 
 def calculer_clients_bloques(df):
-    """
-    Clients avec 0 succes ET au moins SEUIL_TENTATIVES_BLOQUE echecs sur
-    TOUTE la periode disponible - signal fort d'un probleme persistant
-    justifiant un contact support proactif.
-    """
+ 
     df_tx = df[df["event_type"].isin(["transaction_success", "transaction_failed"])]
 
     agg = df_tx.groupby("subscriber").agg(
