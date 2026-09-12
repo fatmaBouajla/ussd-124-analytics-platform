@@ -44,11 +44,7 @@ def main():
 
 
 
-    # Seuil unifie avec tendance_offres.py : volume ET presence temporelle,
 
-    # pas seulement le volume (ancien VOLUME_MIN=100, trop permissif et
-
-    # incoherent avec tendance_offres.py qui exigeait 1000 + 10 jours).
 
     agg["fiable"] = (
 
